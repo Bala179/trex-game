@@ -1,0 +1,299 @@
+<html>
+<body>
+
+<canvas width="700" height="320" style="margin-top:30px; display:block; margin:auto;" id="mycanvas">
+</canvas>
+<br>
+<marquee>Mission Helix</marquee>
+<marquee><i>Coded this game today : Balaganesh M </i></marquee>
+
+
+<script type="text/javascript">
+	var canvas = document.getElementById("mycanvas");
+	var ctx = canvas.getContext("2d");
+	var width = 700;
+	var height = 320;
+	var audio = new Audio('jump.mp3');
+
+	function playJumpAudio(){
+
+	        audio.play();
+
+	}
+
+
+
+	function drawObject(object){
+		//Find current index of image to be used.
+		var currentImageIndex = counter%object.images.length;
+		//Access image from array of images
+		var currentImage = object.images[currentImageIndex];
+		//Draw of canvas
+		try{
+			ctx.drawImage(currentImage,object.x-(object.width/2),object.y-(object.height/2),object.width,object.height);
+		} catch(er){}
+		if(1===object.repeatX){
+			ctx.drawImage(currentImage,object.width + object.x-(object.width/2),object.y-(object.height/2),object.width,object.height);
+		}
+		
+	}
+	
+	var dragonImages = [];
+		
+	var dragonImageUrls = ["1x-trex.png",
+	"2x-trex.png",
+	"3x-trex.png",
+	"4x-trex.png",
+	"5x-trex.png"];
+
+		 
+	for(var i=0; i<dragonImageUrls.length ; i++){
+		var image = new Image();
+		image.src = dragonImageUrls[i];
+		
+		// Add image into fresh array
+		dragonImages.push(image);
+	}
+
+	// An object
+	var dragon = {};
+	dragon.images = dragonImages ;
+	dragon.width = 50;
+	dragon.height = 50;
+	dragon.x = 100;
+	dragon.y = 280;
+	dragon.speedX = 0;
+	dragon.speedY = 0;
+	var gravity = 2.08;
+
+	dragon.move = function(){
+
+		this.speedY = this.speedY + gravity;
+
+		this.y = this.y + this.speedY;
+
+		if(this.y > 280){
+
+			this.y = 280;
+
+			this.speedY =0;
+	
+		}
+
+	}
+
+
+
+	var clouds = [];
+	var cloudImage = new Image();
+	cloudImage.src = "cloud.png";
+
+	function getCloud(){
+		var cloud = {};
+		cloud.images = [cloudImage];
+		cloud.width = 50;
+		cloud.height = 30;
+		cloud.x = width;
+		cloud.y = 30 + Math.random()*75;
+		cloud.isActive = true;
+		cloud.speedX = -4 - Math.random()*4;
+		cloud.speedY = 0;
+
+		cloud.move = function(){
+			//this -> whichever object we are working with
+			this.x = this.x + this.speedX;
+			if(this.x < -100 ){
+				this.isActive = false;
+			}
+		}
+		return cloud;
+	}
+	var hurdles = [];
+
+	var hurdleImage = new Image();
+
+	hurdleImage.src = "hurdle.png";
+
+	function getHurdle(){
+
+
+		var hurdle = {};
+
+		hurdle.images = [hurdleImage] ;
+	
+		hurdle.width = 30;
+
+		hurdle.height = 70;
+
+		hurdle.x=width;
+
+		hurdle.y=height - hurdle.height/2 - 10;
+
+		hurdle.isActive = true;
+ 
+		hurdle.speedX = -9;
+
+		hurdle.speedY = 0;
+
+		hurdle.move = function(){
+
+			this.x = this.x + this.speedX;
+
+			if(this.x < -100 ){
+
+				this.isActive = false;
+			}
+
+		}
+
+			
+		return hurdle;
+
+	}
+
+
+
+	
+	var landImage = new Image();
+	landImage.src = "1x-horizon.png"; 
+	var land = {};
+	land.width = 1200;
+	land.height = 12;
+	land.images = [landImage];
+	land.x= land.width/2;
+	land.y= height -13;
+	land.speedX = -4;
+	land.speedY = 0;
+	land.repeatX = 1;
+	land.move = function(){
+		this.x = this.x + this.speedX;
+		if( this.x < -this.width/2 ){
+			this.x += this.width ;
+		}
+	}
+	var counter = 0;
+	var score = 0;
+	var gameOver = false;
+
+	function update(){
+		if(gameOver)
+			return;
+
+		counter++;
+		score++;
+	
+		if(counter%30==0){
+			// Create new cloud and store it in array named clouds
+			var cloud = getCloud();
+			clouds.push(cloud);
+		} 
+		if(counter%100==0){
+
+			// Create new hurdle and store it in array named hurdles
+
+			var hurdle = getHurdle();
+
+			hurdles.push(hurdle);
+
+		}
+		//Clear all background to white
+		ctx.fillStyle = "#ffffff";
+		ctx.fillRect(0, 0, width, height);
+
+		ctx.font = "30px Arial";
+
+		ctx.fillStyle = "#000000";
+
+		ctx.fillText("Score: " + parseInt(score/10) , width-180, 50);
+
+		dragon.move();
+		drawObject(dragon);
+		var cloudsFinal = [];
+		for(var i = 0; i < clouds.length ; i++){
+			var cloud = clouds[i];
+			cloud.move();
+			drawObject(cloud);
+			if(cloud.isActive){
+				cloudsFinal.push(cloud);
+			}
+		}
+		clouds = cloudsFinal;
+		
+		var hurdlesFinal = [];
+
+		for(var i = 0; i < hurdles.length ; i++){
+
+			var hurdle = hurdles[i];
+
+
+			hurdle.move();
+
+			drawObject(hurdle);
+
+					
+			if(hurdle.isActive){
+
+				hurdlesFinal.push(hurdle);
+
+			}
+
+		}
+
+		hurdles = hurdlesFinal;
+
+
+
+		land.move();
+		drawObject(land);
+		
+		// Collision detection
+		for(var i = 0; i < hurdles.length ; i++){
+
+			var hurdle = hurdles[i];
+
+
+			if((dragon.x + dragon.width >= hurdle.x && hurdle.x >= dragon.x) || 
+			(hurdle.x + hurdle.width >= dragon.x && dragon.x >= hurdle.x)){
+				
+				if((dragon.y + dragon.height >= hurdle.y && hurdle.y >= dragon.y) || 
+				(hurdle.y + hurdle.height >= dragon.y && dragon.y >= hurdle.y)){
+					gameOver = true;
+					ctx.font = "30px Arial";
+
+					ctx.fillStyle = "#000000";
+
+					ctx.fillText("Game Over!", width/2 - 100, height/2);
+					break;
+				}
+			}
+		}
+
+	}
+	var isMusicPlaying = false;
+
+	document.addEventListener("keydown", function(event) {
+		if(event.keyCode == 32){
+			if(dragon.y == 280){
+				playJumpAudio();
+				dragon.speedY = -20;
+
+			}
+		}
+		if(!isMusicPlaying){
+
+			isMusicPlaying=true;
+
+
+			var audio = new Audio('BGM.mp3');
+
+		    	audio.play();
+
+		}
+
+	});	
+	// function name, time in milliseconds 	
+	setInterval(update, 50);
+</script>
+
+</body>
+</html>
